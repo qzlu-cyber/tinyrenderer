@@ -3,19 +3,24 @@
 
 #include <vector>
 #include "geometry.h"
+#include "tgaimage.h"
 
-// 模型类
 class Model {
 private:
-    std::vector<Vec3f> verts_; // 顶点集，每个顶点都是三维向量
-    std::vector<std::vector<int> > faces_; // 面片集
+    std::vector<Vec3f> verts_;
+    std::vector<std::vector<Vec3i>> faces_;
+    std::vector<Vec3f> norms_;
+    std::vector<Vec2f> uv_;
+    TGAImage diffuseMap_;
+    void loadTexture(std::string filename, const char* suffix, TGAImage& image);
 public:
-    Model(const char* filename); // 根据.obj文件路径导入模型
+    Model(const char* filename);
     ~Model();
-    int nverts(); // 返回模型顶点数量
-    int nfaces(); // 返回模型面片数量
-    Vec3f vert(int i); // 返回第i个顶点
-    std::vector<int> face(int idx); // 返回第idx个面片
+    int nverts();
+    int nfaces();
+    Vec3f vert(int i);
+    std::vector<int> face(int idx);
+    Vec2i uv(int iface, int nvert);
+    TGAColor diffuse(Vec2i uv);
 };
-
 #endif //__MODEL_H__

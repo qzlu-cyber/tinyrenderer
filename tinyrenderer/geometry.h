@@ -17,6 +17,7 @@ struct Vec2 {
     inline Vec2<t> operator+(const Vec2<t>& V) const { return Vec2<t>(u + V.u, v + V.v); } // 向量加法
     inline Vec2<t> operator-(const Vec2<t>& V) const { return Vec2<t>(u - V.u, v - V.v); } // 向量减法
     inline Vec2<t> operator*(float f)          const { return Vec2<t>(u * f, v * f); } // 向量的数乘运算
+    inline t& operator[](const int idx) { if (idx <= 0) return x; else return y; }
     template <class > friend std::ostream& operator<<(std::ostream& s, Vec2<t>& v); // 向量输出
 };
 
@@ -35,6 +36,7 @@ struct Vec3 {
     inline Vec3<t> operator -(const Vec3<t>& v) const { return Vec3<t>(x - v.x, y - v.y, z - v.z); } // 向量减法
     inline Vec3<t> operator *(float f)          const { return Vec3<t>(x * f, y * f, z * f); } // 向量的数乘运算
     inline t       operator *(const Vec3<t>& v) const { return x * v.x + y * v.y + z * v.z; } // 向量的点乘（内积）
+    inline t& operator[](const int idx) { if (idx <= 0) return x; else if (idx == 1) return y; else return z; }
     float norm() const { return std::sqrt(x * x + y * y + z * z); } // 向量的模长
     Vec3<t>& normalize(t l = 1) { *this = (*this) * (l / norm()); return *this; } // 向量归一化
     template <class > friend std::ostream& operator<<(std::ostream& s, Vec3<t>& v); // 向量输出

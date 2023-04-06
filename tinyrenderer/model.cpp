@@ -5,34 +5,48 @@
 #include <vector>
 #include "model.h"
 
-Model::Model(const char* filename) : verts_(), faces_() {
+Model::Model(const char* filename) : verts_(), faces_(), norms_(), uv_() {
     std::ifstream in;
     in.open(filename, std::ifstream::in);
     if (in.fail()) return;
     std::string line;
-    while (!in.eof()) { // 没有到文件末尾的话
-        std::getline(in, line); // 读入一行
+    while (!in.eof()) {
+        std::getline(in, line);
         std::istringstream iss(line.c_str());
         char trash;
-        if (!line.compare(0, 2, "v ")) { // 如果这一行的前两个字符是“v ”的话，代表是顶点数据
+        if (!line.compare(0, 2, "v ")) {
             iss >> trash;
-            Vec3f v; // 读入顶点坐标
+            Vec3f v;
             for (int i = 0; i < 3; i++) iss >> v.raw[i];
-            verts_.push_back(v); // 加入顶点集
+            verts_.push_back(v);
         }
-        else if (!line.compare(0, 2, "f ")) { // 如果这一行的前两个字符是“f ”的话，代表是面片数据
-            std::vector<int> f;
-            int itrash, idx; // idx是顶点索引，itrash用来读我们暂时用不到的纹理坐标和法线向量
+        else if (!line.compare(0, 3, "vt ")) {
+            iss >> trash >> trash;
+            Vec2f uv;
+            for (int i = 0; i < 2; i++) iss >> uv[i];
+            uv_.push_back(uv);
+        }
+        else if (!line.compare(0, 3, "vn ")) {
+            iss >> trash >> trash;
+            Vec3f normal;
+            for (int i = 0; i < 3; i++) iss >> normal[i];
+            norms_.push_back(normal);
+        }
+        else if (!line.compare(0, 2, "f ")) {
+            std::vector<Vec3i> f;
+            Vec3i tmp;
             iss >> trash;
-            while (iss >> idx >> trash >> itrash >> trash >> itrash) { // 读取x/x/x格式
-                idx--; // in wavefront obj all indices start at 1, not zero
-                f.push_back(idx); // 加入该面片的顶点集
+            while (iss >> tmp[0] >> trash >> tmp[1] >> trash >> tmp[2]) {
+                for (int i = 0; i < 3; i++) tmp[i]--;
+                f.push_back(tmp);
             }
-            faces_.push_back(f); // 把该面片加入模型的面片集
+            faces_.push_back(f);
         }
     }
-    std::cerr << "# v# " << verts_.size() << " f# " << faces_.size() << std::endl; // 输出顶点与面片数量
+    std::cerr << "# v# " << verts_.size() << " f# " << faces_.size() << " vt# " << uv_.size() << " vn# " << norms_.size() << std::endl;
+    loadTexture(filename, "_diffuse.tga", diffuseMap_);
 }
+
 
 Model::~Model() {
 }
@@ -46,9 +60,35 @@ int Model::nfaces() {
 }
 
 std::vector<int> Model::face(int idx) {
-    return faces_[idx];
+    std::vector<int> face;
+    std::vector<Vec3i> tmp = faces_[idx];
+    for (int i = 0; i < tmp.size(); i++)
+        face.push_back(tmp[i][0]);
+    return face;
 }
 
 Vec3f Model::vert(int i) {
     return verts_[i];
+}
+
+void Model::loadTexture(std::string filename, const char* suffix, TGAImage& image)
+{
+    std::string texfile(filename);
+    size_t dot = texfile.find_last_of(".");
+    if (dot != std::string::npos) {
+        texfile = texfile.substr(0, dot) + std::string(suffix);
+        std::cerr << "texture file " << texfile << " loading " << (image.read_tga_file(texfile.c_str()) ? "ok" : "failed") << std::endl;
+        image.flip_vertically();
+    }
+}
+
+TGAColor Model::diffuse(Vec2i uv)
+{
+    return diffuseMap_.get(uv.x, uv.y);
+}
+
+Vec2i Model::uv(int iface, int nvert)
+{
+    int idx = faces_[iface][nvert][1];
+    return Vec2i(uv_[idx].x * diffuseMap_.get_width(), uv_[idx].y * diffuseMap_.get_height());
 }
