@@ -1,11 +1,14 @@
 #include <vector>
 #include <cmath>
+#include <algorithm>
+
 #include "tgaimage.h"
 #include "model.h"
 #include "geometry.h"
 
 const TGAColor white = TGAColor(255, 255, 255, 255);
 const TGAColor red = TGAColor(255, 0, 0, 255);
+const TGAColor green = TGAColor(0, 0, 255, 255);
 const int width = 800;
 const int height = 800;
 
@@ -19,11 +22,11 @@ const int height = 800;
 /// <param name="image">要绘制的 image</param>
 /// <param name="color">颜色</param>
 void lineX(int x0, int y0, int x1, int y1, TGAImage& image, TGAColor color) {
-	for (int x = x0; x < x1 + 1; x++) {
-		float k = static_cast<float>(x - x0) / (x1 - x0);
-		int y = k * (y1 - y0) + y0;
-		image.set(x, y, color);
-	}
+    for (int x = x0; x < x1 + 1; x++) {
+        float k = static_cast<float>(x - x0) / (x1 - x0);
+        int y = k * (y1 - y0) + y0;
+        image.set(x, y, color);
+    }
 }
 
 /// <summary>
@@ -37,138 +40,252 @@ void lineX(int x0, int y0, int x1, int y1, TGAImage& image, TGAColor color) {
 /// <param name="image">要绘制的 image</param>
 /// <param name="color">颜色</param>
 void lineY(int x0, int y0, int x1, int y1, TGAImage& image, TGAColor color) {
-	for (int y = y0; y < y1 + 1; y++) {
-		float k = static_cast<float>(y - y0) / (y1 - y0);
-		int x = k * (x1 - x0) + x0;
-		image.set(x, y, color);
-	}
+    for (int y = y0; y < y1 + 1; y++) {
+        float k = static_cast<float>(y - y0) / (y1 - y0);
+        int x = k * (x1 - x0) + x0;
+        image.set(x, y, color);
+    }
 }
 
 void line(int x0, int y0, int x1, int y1, TGAImage& image, TGAColor color) {
-	if (std::abs(x1 - x0) > std::abs(y1 - y0)) // 此时能通过遍历所有的 x 得到 y
-	{
-		if (x1 > x0) // 正向绘制
-			lineX(x0, y0, x1, y1, image, color);
-		else // 反向绘制
-			lineX(x1, y1, x0, y0, image, color);
-	}
-	else
-	{
-		if (y1 > y0)
-			lineY(x0, y0, x1, y1, image, color);
-		else
-			lineY(x1, y1, x0, y0, image, color);
-	}
+    if (std::abs(x1 - x0) > std::abs(y1 - y0)) // 此时能通过遍历所有的 x 得到 y
+    {
+        if (x1 > x0) // 正向绘制
+            lineX(x0, y0, x1, y1, image, color);
+        else // 反向绘制
+            lineX(x1, y1, x0, y0, image, color);
+    }
+    else
+    {
+        if (y1 > y0)
+            lineY(x0, y0, x1, y1, image, color);
+        else
+            lineY(x1, y1, x0, y0, image, color);
+    }
 }
 
 /// <summary>
 /// bresenham 算法绘制直线 原理：https://www.bilibili.com/video/BV1364y1d7Lo
 /// </summary>
 void bresenhamLine(int x0, int y0, int x1, int y1, TGAImage& image, TGAColor color) {
-	bool flag = 0; // 标记能否通过遍历 y 得到所有 x
-	if (std::abs(x1 - x0) < std::abs(y1 - y0)) // 此时不能通过遍历 x 得到所有 y
-	{
-		std::swap(x0, y0); // 交换起始坐标点
-		std::swap(x1, y1);
-		flag = 1;
-	}
+    bool flag = 0; // 标记能否通过遍历 y 得到所有 x
+    if (std::abs(x1 - x0) < std::abs(y1 - y0)) // 此时不能通过遍历 x 得到所有 y
+    {
+        std::swap(x0, y0); // 交换起始坐标点
+        std::swap(x1, y1);
+        flag = 1;
+    }
 
-	if (x0 > x1) // 是否为反向绘制
-	{
-		std::swap(x0, x1); // 如果是就交换
-		std::swap(y0, y1);
-	}
+    if (x0 > x1) // 是否为反向绘制
+    {
+        std::swap(x0, x1); // 如果是就交换
+        std::swap(y0, y1);
+    }
 
-	int dx = x1 - x0, dy = std::abs(y1 - y0);
-	int increaseEast = 2 * dy, increaseNorthEast = 2 * (dy - dx);
-	int d = 2 * dy - dx;
+    int dx = x1 - x0, dy = std::abs(y1 - y0);
+    int increaseEast = 2 * dy, increaseNorthEast = 2 * (dy - dx);
+    int d = 2 * dy - dx;
 
-	int x = x0, y = y0;
+    int x = x0, y = y0;
 
-	// 绘制第一个像素点
-	if (flag) {
-		image.set(y, x, color);
-	}
-	else {
-		image.set(x, y, color);
-	}
+    // 绘制第一个像素点
+    if (flag) {
+        image.set(y, x, color);
+    }
+    else {
+        image.set(x, y, color);
+    }
 
-	for (int x = x0 + 1; x < x1 + 1; x++) {
-		if (d < 0.5) {
-			d += increaseEast;
-		}
-		else
-		{
-			d += increaseNorthEast;
-			if (y1 > y0)
-				y++;
-			else
-				y--;
-		}
+    for (int x = x0 + 1; x < x1 + 1; x++) {
+        if (d < 0.5) {
+            d += increaseEast;
+        }
+        else
+        {
+            d += increaseNorthEast;
+            if (y1 > y0)
+                y++;
+            else
+                y--;
+        }
 
-		if (flag) {
-			image.set(y, x, color);
-		}
-		else {
-			image.set(x, y, color);
-		}
-	}
+        if (flag) {
+            image.set(y, x, color);
+        }
+        else {
+            image.set(x, y, color);
+        }
+    }
 
 }
 
 void bresenhamLine2(int x0, int y0, int x1, int y1, TGAImage& image, TGAColor color) {
-	bool flag = 0; // 标记能否通过遍历 y 得到所有 x
-	if (std::abs(x1 - x0) < std::abs(y1 - y0)) // 此时不能通过遍历 x 得到所有 y
-	{
-		std::swap(x0, y0); // 交换起始坐标点
-		std::swap(x1, y1);
-		flag = 1;
-	}
+    bool flag = 0; // 标记能否通过遍历 y 得到所有 x
+    if (std::abs(x1 - x0) < std::abs(y1 - y0)) // 此时不能通过遍历 x 得到所有 y
+    {
+        std::swap(x0, y0); // 交换起始坐标点
+        std::swap(x1, y1);
+        flag = 1;
+    }
 
-	if (x0 > x1) // 是否为反向绘制
-	{
-		std::swap(x0, x1); // 如果是就交换
-		std::swap(y0, y1);
-	}
+    if (x0 > x1) // 是否为反向绘制
+    {
+        std::swap(x0, x1); // 如果是就交换
+        std::swap(y0, y1);
+    }
 
-	int dx = x1 - x0, dy = std::abs(y1 - y0);
-	int derror = 2 * dy; // 即直线斜率
-	int error = 0; // 即误差项
+    int dx = x1 - x0, dy = std::abs(y1 - y0);
+    int derror = 2 * dy; // 即直线斜率
+    int error = 0; // 即误差项
 
-	for (int x = x0, y = y0; x <= x1; x++) {
-		if (flag) {
-			image.set(y, x, color);
-		}
-		else {
-			image.set(x, y, color);
-		}
-		error += derror; // 第二个像素点判断 2dy - dx > 0 是否成立，如果成立则它的纵坐标要 +1；
-		// 如果它确实是 > 0，则第三个像素要判断 dx * slope > 1.5，即 4dy - 3dx > 0 => 2dy - dx + 2dy - 2dx > 0 => 4dy - 2dx > 0 是否成立 
-		if (error > dx) {
-			y += (y1 > y0 ? 1 : -1);
-			error -= dx * 2;
-		}
-	}
+    for (int x = x0, y = y0; x <= x1; x++) {
+        if (flag) {
+            image.set(y, x, color);
+        }
+        else {
+            image.set(x, y, color);
+        }
+        error += derror; // 第二个像素点判断 2dy - dx > 0 是否成立，如果成立则它的纵坐标要 +1；
+        // 如果它确实是 > 0，则第三个像素要判断 dx * slope > 1.5，即 4dy - 3dx > 0 => 2dy - dx + 2dy - 2dx > 0 => 4dy - 2dx > 0 是否成立 
+        if (error > dx) {
+            y += (y1 > y0 ? 1 : -1);
+            error -= dx * 2;
+        }
+    }
+}
+
+void triangle(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage& image, TGAColor color) {
+    if (t0.y > t1.y)
+    {
+        std::swap(t0, t1);
+    }
+    if (t0.y > t2.y)
+    {
+        std::swap(t0, t2);
+    }
+    if (t1.y > t2.y)
+    {
+        std::swap(t1, t2);
+    } // 三个顶点按照 y 值从小到大排序
+
+    // 根据三角形相似计算出要绘制的直线的起止点坐标
+    int totalHeight = t2.y - t0.y;
+    int segmentHeight = t1.y - t0.y;
+
+    // 分别在两段绘制
+    for (int y = t0.y; y < t1.y + 1; y++)
+    {
+        float alpha = static_cast<float>(y - t0.y) / totalHeight;
+        float beta = static_cast<float>(y - t0.y) / segmentHeight;
+        Vec2i A = t0 + (t2 - t0) * alpha;
+        Vec2i B = t0 + (t1 - t0) * beta;
+
+        if (A.x > B.x)
+            std::swap(A, B);
+        for (int x = A.x; x < B.x + 1; x++) {
+            image.set(x, y, color);
+        }
+    }
+
+    for (int y = t1.y; y < t2.y + 1; y++) {
+        segmentHeight = t2.y - t1.y;
+        float alpha = static_cast<float>(y - t0.y) / totalHeight;
+        float beta = static_cast<float>(y - t1.y) / segmentHeight;
+        Vec2i A = t0 + (t2 - t0) * alpha;
+        Vec2i B = t1 + (t2 - t1) * beta;
+
+        if (A.x > B.x)
+            std::swap(A, B);
+        for (int x = A.x; x < B.x + 1; x++) {
+            image.set(x, y, color);
+        }
+    }
+}
+
+// 判断点 P 是否位于三角形 ABC 内
+bool insideTriangle(Vec3f A, Vec3f B, Vec3f C, Vec3f P) {
+    Vec3<float> AB = B - A, BC = C - B, CA = A - C, AP = P - A, BP = P - B, CP = P - C;
+    if ((AB ^ AP).z > 0 && (BC ^ BP).z > 0 && (CA ^ CP).z > 0)
+        return true;
+    else if ((AB ^ AP).z < 0 && (BC ^ BP).z < 0 && (CA ^ CP).z < 0)
+        return true;
+    return false;
+}
+
+Vec3f barycentric(Vec2i* pts, Vec2i P) {
+    int xa = pts[0].x;
+    int ya = pts[0].y;
+    int xb = pts[1].x;
+    int yb = pts[1].y;
+    int xc = pts[2].x;
+    int yc = pts[2].y;
+    int x = P.x;
+    int y = P.y;
+
+    float gamma = static_cast<float>((ya - yb) * x + (xb - xa) * y + xa * yb - xb * ya) / static_cast<float>((ya - yb) * xc + (xb - xa) * yc + xa * yb - xb * ya);
+    float beta = static_cast<float>((ya - yc) * x + (xc - xa) * y + xa * yc - xc * ya) / static_cast<float>((ya - yc) * xb + (xc - xa) * yb + xa * yc - xc * ya);
+    float alpha = 1 - gamma - beta;
+
+    return Vec3f(alpha, beta, gamma);
+}
+
+void triangle2(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage& image, TGAColor color) {
+    int minX = std::min({ t0.x, t1.x, t2.x });
+    int maxX = std::max({ t0.x, t1.x, t2.x });
+    int minY = std::min({ t0.y, t1.y, t2.y });
+    int maxY = std::max({ t0.y, t1.y, t2.y });
+
+    Vec3f A(t0.x, t0.y, 1.0f), B(t1.x, t1.y, 1.0f), C(t2.x, t2.y, 1.0f);
+
+    Vec2i pts[3] = { t0, t1, t2 };
+
+    for (int x = minX; x < maxX + 1; x++) {
+        for (int y = minY; y < maxY + 1; y++) {
+            // TODO: 误差很大，有很多点被抛弃
+            //Vec3f P(x, y, 1.0f);
+            //// 依次判断每个像素是否在三角形内
+            //if (insideTriangle(A, B, C, P))
+            //	image.set(x, y, color);
+            Vec2i P(x, y);
+            Vec3f baryCoord = barycentric(pts, P);
+            if (baryCoord.x < -0.1 || baryCoord.y < -0.1 || baryCoord.z < -0.1)
+                continue;
+            image.set(x, y, color);
+        }
+    }
 }
 
 int main(int argc, char** argv) {
-	TGAImage image(width, height, TGAImage::RGB);
-	Model* model = new Model(".\\obj\\african_head.obj");
+    TGAImage image(width, height, TGAImage::RGB);
+    Model* model = nullptr;
 
-	for (int i = 0; i < model->nfaces(); i++) {
-		std::vector<int> face = model->face(i);
-		for (int j = 0; j < 3; j++) {
-			Vec3f v0 = model->vert(face[j]);
-			Vec3f v1 = model->vert(face[(j + 1) % 3]);
-			int x0 = (v0.x + 1.) * width / 2.;
-			int y0 = (v0.y + 1.) * height / 2.;
-			int x1 = (v1.x + 1.) * width / 2.;
-			int y1 = (v1.y + 1.) * height / 2.;
-			bresenhamLine2(x0, y0, x1, y1, image, white);
-		}
-	}
+    Vec3f light_dir(0, 0, -1); // 定向光源方向
 
-	image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
-	image.write_tga_file("output.tga");
-	return 0;
+    if (2 == argc) {
+        model = new Model(argv[1]);
+    }
+    else {
+        model = new Model("./obj/african_head.obj");
+    }
+
+    for (int i = 0; i < model->nfaces(); i++)
+    {
+        std::vector<int> face = model->face(i); //获取模型的第 i 个面片
+        Vec2i screenCoords[3]; // 存贮第 i 个面片三个顶点的屏幕坐标
+        Vec3f worldCoords[3]; // 存储第 i 个面片三个顶点的世界坐标
+        for (int j = 0; j < 3; j++)
+        {
+            worldCoords[j] = model->vert(face[j]);
+            screenCoords[j] = Vec2i((worldCoords[j].x + 1.) * width / 2., (worldCoords[j].y + 1.) * height / 2.); // 转换为屏幕坐标
+        }
+        Vec3f normal = (worldCoords[2] - worldCoords[0]) ^ (worldCoords[1] - worldCoords[0]); // 计算三角形法线
+        normal.normalize();
+        float intensity = normal * light_dir; // 法线与光线进行点乘得到光强大小，未考虑光传播的衰减
+        if (intensity > 0) // 光线方向与三角形法线的夹角大于 90度（即cosθ < 0，即intensity < 0，此刻光线在物体背面），则不绘制它
+            triangle2(screenCoords[0], screenCoords[1], screenCoords[2], image, TGAColor(intensity * 255, intensity * 255, intensity * 255, 255));
+    }
+
+    image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
+    image.write_tga_file("output.tga");
+    return 0;
 }
