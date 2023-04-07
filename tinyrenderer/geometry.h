@@ -57,4 +57,25 @@ template <class t> std::ostream& operator<<(std::ostream& s, Vec3<t>& v) {
     return s;
 }
 
+const int DEFAULT_ALLOC = 4;
+
+class Matrix
+{
+private:
+    std::vector<std::vector<float>> m;
+    int rows, cols;
+public:
+    Matrix(int r = DEFAULT_ALLOC, int c = DEFAULT_ALLOC); // 默认四阶方阵
+    inline int nrows();
+    inline int ncols();
+
+    static Matrix identity(int dimensions); // 单位矩阵
+    std::vector<float>& operator[](const int i);
+    Matrix operator*(const Matrix& a); // 矩阵相乘
+    Matrix transpose(); // 转置
+    Matrix inverse(); // 求逆
+
+    friend std::ostream& operator<<(std::ostream& s, Matrix& m);
+};
+
 #endif //__GEOMETRY_H__

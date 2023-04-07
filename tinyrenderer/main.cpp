@@ -12,6 +12,7 @@ const TGAColor red = TGAColor(255, 0, 0, 255);
 const TGAColor green = TGAColor(0, 0, 255, 255);
 const int width = 800;
 const int height = 800;
+const int depth = 255;
 
 Model* model = NULL;
 
@@ -269,12 +270,75 @@ void triangle2(Vec3f t0, Vec3f t1, Vec3f t2, Vec2i* uvs, float* zBuffer, TGAImag
     }
 }
 
+// 将坐标转换为齐次坐标
+Matrix homogeneousCoordinates(Vec3f t) {
+    Matrix m(4, 1);
+    m[0][0] = t.x;
+    m[1][0] = t.y;
+    m[2][0] = t.z;
+    m[3][0] = 1.0f;
+    return m;
+}
+
+// 模型变换矩阵
+Matrix modelMatrix()
+{
+    return Matrix::identity(4);
+}
+
+// 视图变换矩阵
+Matrix viewMatrix()
+{
+    return Matrix::identity(4);
+}
+
+// 投影变换矩阵
+Matrix projectionMatrix(float c) {
+    Matrix projection = Matrix::identity(4);
+    projection[3][2] = -1.0f / c;
+    return projection;
+}
+
+// 齐次坐标乘以投影变换矩阵后各个分量同时除以最后一个分量，将最后一个分量重新归为 0
+Matrix projectionDivision(Matrix m) {
+    int rows = m.nrows();
+    for (size_t i = 0; i < rows; i++)
+        m[i][0] /= m[rows - 1][0];
+    return m;
+}
+
+// 进行视口变换将 NDC 坐标转换为屏幕坐标
+Matrix viewportMatrix(int x, int y, int w, int h) {
+    Matrix m = Matrix::identity(4);
+    m[0][3] = x + w / 2.f;
+    m[1][3] = y + h / 2.f;
+    m[2][3] = depth / 2.f;
+
+    m[0][0] = w / 2.f;
+    m[1][1] = h / 2.f;
+    m[2][2] = depth / 2.f;
+    return m;
+}
+
+// 将齐次坐标逆变换回顶点坐标
+Vec3f inverseVector(Matrix m) {
+    return Vec3f(m[0][0], m[1][0], m[2][0]);
+}
+
 int main(int argc, char** argv) {
     TGAImage image(width, height, TGAImage::RGB);
+
+    Vec3f cameraPos(0, 0, 3); // 摄像机摆放的位置
 
     Vec3f light_dir(0, 0, -1); // 定向光源方向
 
     float* zBuffer = new float[width * height]; // 存储每个像素的深度值，每当该绘制此像素时和它进行比较，大于则绘制，否则该像素被遮挡不必再绘制
+
+    Matrix model_ = modelMatrix();
+    Matrix view_ = viewMatrix();
+    Matrix projection_ = projectionMatrix(cameraPos.z);
+    Matrix viewport_ = viewportMatrix(width / 8, height / 8, width * 3 / 4, height * 3 / 4);
+
     for (int i = 0; i < width * height; i++)
     {
         zBuffer[i] = -std::numeric_limits<float>::max();
@@ -292,10 +356,12 @@ int main(int argc, char** argv) {
         std::vector<int> face = model->face(i); //获取模型的第 i 个面片
         Vec3f screenCoords[3]; // 存贮第 i 个面片三个顶点的屏幕坐标
         Vec3f worldCoords[3]; // 存储第 i 个面片三个顶点的世界坐标
+        // Transformation:
         for (int j = 0; j < 3; j++)
         {
             worldCoords[j] = model->vert(face[j]);
-            screenCoords[j] = Vec3f((worldCoords[j].x + 1.) * width / 2., (worldCoords[j].y + 1.) * height / 2., 1.0f); // 转换为屏幕坐标
+            screenCoords[j] = inverseVector(viewport_ * projectionDivision(projection_ * view_ * model_ * homogeneousCoordinates(worldCoords[j])));
+            //screenCoords[j] = Vec3f((worldCoords[j].x + 1.) * width / 2., (worldCoords[j].y + 1.) * height / 2., 1.0f); // 转换为屏幕坐标
         }
         Vec3f normal = (worldCoords[2] - worldCoords[0]) ^ (worldCoords[1] - worldCoords[0]); // 计算三角形法线
         normal.normalize();
