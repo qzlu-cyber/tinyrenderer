@@ -1,26 +1,27 @@
-#ifndef __MODEL_H__
-#define __MODEL_H__
+#pragma once
+
+/// 每个导入的模型，认为它拥有：
+/// 1.一张可能存在的纹理；（对应Texture * texture）
+/// 2.所有三角面片组成的数组。(对应std::vector<Triangle> TriangleList)
 
 #include <vector>
+
 #include "geometry.h"
 #include "tgaimage.h"
+#include "Texture.h"
+#include "Triangle.h"
+
 
 class Model {
 private:
-    std::vector<Vec3f> verts_;
-    std::vector<std::vector<Vec3i>> faces_;
-    std::vector<Vec3f> norms_;
-    std::vector<Vec2f> uv_;
-    TGAImage diffuseMap_;
-    void loadTexture(std::string filename, const char* suffix, TGAImage& image);
+    Texture* texture = nullptr;
+    int verNum, faceNum;
+
 public:
+    std::vector<Triangle> TriangleList;
+
     Model(const char* filename);
     ~Model();
-    int nverts();
-    int nfaces();
-    Vec3f vert(int i);
-    std::vector<int> face(int idx);
-    Vec2i uv(int iface, int nvert);
-    TGAColor diffuse(Vec2i uv);
+    int nverts(); // 获取顶点数
+    int nfaces(); // 获取面数
 };
-#endif //__MODEL_H__
