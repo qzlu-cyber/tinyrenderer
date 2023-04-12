@@ -6,10 +6,10 @@
 
 #include <vector>
 
-#include "geometry.h"
 #include "tgaimage.h"
 #include "Texture.h"
 #include "Triangle.h"
+#include "global.h"
 
 
 class Model {
@@ -22,6 +22,6 @@ public:
 
     Model(const char* filename);
     ~Model();
-    int nverts(); // 获取顶点数
-    int nfaces(); // 获取面数
+    int nverts() const; // 获取顶点数
+    int nfaces() const; // 获取面数
 };

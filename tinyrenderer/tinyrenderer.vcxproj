@@ -143,6 +143,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="geometry.h" />
+    <ClInclude Include="global.h" />
     <ClInclude Include="model.h" />
     <ClInclude Include="rasterizer.h" />
     <ClInclude Include="Shader.h" />

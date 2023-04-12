@@ -25,7 +25,7 @@ void Triangle::computeGColor(const Vector3f& light_dir)
 {
     for (int i = 0; i < 3; i++)
     {
-        float intensity = std::max(0.0f, normal[i].normalized().dot(light_dir.normalized()));
+        float intensity = std::max(0.f, normal[i].normalized().dot(light_dir.normalized()));
         //std::cout << intensity << std::endl;
         color[i] = Vector3f(255, 255, 255) * intensity;
         //std::cout << color[i] << std::endl;

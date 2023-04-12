@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "model.h"
-#include "Triangle.h"
 
 Model::Model(const char* filename)
     : verNum(0), faceNum(0)
@@ -93,10 +92,10 @@ Model::Model(const char* filename)
 Model::~Model() {
 }
 
-int Model::nverts() {
+int Model::nverts() const {
     return verNum;
 }
 
-int Model::nfaces() {
+int Model::nfaces() const {
     return faceNum;
 }

@@ -8,13 +8,7 @@
 #include "geometry.h"
 #include "rasterizer.h"
 
-const int width = 800;
-const int height = 800;
-
 Model* model = NULL;
-
-const Vector3f cameraPos(0, 0, 3);//摄像机摆放的位置
-const Vector3f lightDir(0, 0, -1);//平行光方向
 
 /// <summary>
 /// 遍历 (x0, x1) 之间所有的 x 坐标，然后插值得到 y 坐标
@@ -239,12 +233,18 @@ Vector3f normalFragmentShader(const fragmentShaderPayload& payload)
     return result;
 }
 
+Vector3f fFragmentShader(const fragmentShaderPayload& payload)
+{
+    Vector3f color_frag = payload.color;
+    return color_frag;
+}
+
 int main(int argc, char** argv) {
     if (2 == argc) {
         model = new Model(argv[1]);
     }
     else {
-        model = new Model("res/spot/spot_triangulated_good.obj");
+        model = new Model("res/african_head.obj");
     }
 
     std::cout << model->nfaces() << "  " << model->nverts() << std::endl;
@@ -258,7 +258,7 @@ int main(int argc, char** argv) {
     rst::rasterizer r(width, height);
 
     // 给定纹理并设置
-    Texture tex("res/spot/hmap.tga");
+    Texture tex("res/african_head_diffuse.tga");
     r.setTexture(tex);
 
     // 清空帧缓冲和 zBuffer

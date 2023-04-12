@@ -6,7 +6,6 @@
 #include <limits>
 #include <functional>
 
-#include "geometry.h"
 #include "Texture.h"
 #include "model.h"
 #include "Shader.h"
@@ -42,7 +41,7 @@ namespace rst
         std::function<Vector3f(vertexShaderPayload)> vertexShader;
 
         void drawLine();
-        void rasterizerTriangle(Triangle& t);
+        void rasterizerTriangle(const Triangle& t);
 
     public:
         rasterizer(int w, int h) :width(w), height(h)
@@ -63,8 +62,8 @@ namespace rst
 
         void setPixel(Vector2i& point, Vector3f& color);
 
-        void setVertexShader(std::function<Vector3f(vertexShaderPayload)> vert_shader);
-        void setFragmentShader(std::function<Vector3f(fragmentShaderPayload)> frag_shader);
+        void setVertexShader(std::function<Vector3f(vertexShaderPayload)> vertShader);
+        void setFragmentShader(std::function<Vector3f(fragmentShaderPayload)> fragShader);
 
         void draw(std::vector<Triangle>& TriangleList);
 

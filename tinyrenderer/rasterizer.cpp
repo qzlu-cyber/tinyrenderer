@@ -42,6 +42,11 @@ void rst::rasterizer::setVertexShader(std::function<Vector3f(vertexShaderPayload
     vertexShader = vertShader;
 }
 
+auto toVec4(const Vector3f& v3, float w = 1.0f)
+{
+    return Vector4f(v3.x(), v3.y(), v3.z(), w);
+}
+
 void rst::rasterizer::draw(std::vector<Triangle>& TriangleList)
 {
     float f1 = (255 - 0.0) / 2.0;
@@ -108,6 +113,9 @@ void rst::rasterizer::draw(std::vector<Triangle>& TriangleList)
             //std::cout << newtri.v[i] << std::endl;
         }
 
+        //newtri.computeFcolor(lightDir);
+        newtri.computeGColor(lightDir);
+
         //进行屏幕三角形光栅化
         rasterizerTriangle(newtri);
     }
@@ -138,7 +146,7 @@ static std::tuple<float, float, float> computeBarycentric2D(float x, float y, co
     return { c1, c2, c3 };
 }
 
-void rst::rasterizer::rasterizerTriangle(Triangle& t) {
+void rst::rasterizer::rasterizerTriangle(const Triangle& t) {
     const Vector4f* vertex = t.v; // 首先获取三角形 t 的三个顶点
 
     float minX = std::min({ vertex[0].x(), vertex[1].x(), vertex[2].x() });
@@ -151,19 +159,21 @@ void rst::rasterizer::rasterizerTriangle(Triangle& t) {
     int min_Y = std::floor(minY);
     int max_Y = std::ceil(maxY);
 
-    for (int x = min_X; x < max_X; x++)
+    for (int x = min_X; x < max_X + 1; x++)
     {
-        for (int y = min_Y; y < max_Y; y++) {
+        for (int y = min_Y; y < max_Y + 1; y++) {
             Vector2i point(x, y); // 待渲染像素点
 
             if (insideTriangle(x, y, vertex))
             {
-                auto [alpha, beta, gamma] = computeBarycentric2D(static_cast<float>(x + 0.5), static_cast<float>(x + 0.5), vertex);
+                auto [alpha, beta, gamma] = computeBarycentric2D(x, y, vertex);
 
                 float zInterpolation = alpha * vertex[0].z() + beta * vertex[1].z() + gamma * vertex[2].z();
 
                 if (zInterpolation > depthBuffer[y * width + x])
                 {
+                    depthBuffer[y * width + x] = zInterpolation;
+
                     // 插值计算三角形内的各项属性值
                     Vector2f uvInterpolation = t.texCoords[0] * alpha + t.texCoords[1] * beta + t.texCoords[2] * gamma;
                     Vector3f normalInterpolation = t.normal[0] * alpha + t.normal[1] * beta + t.normal[2] * gamma;
@@ -172,7 +182,6 @@ void rst::rasterizer::rasterizerTriangle(Triangle& t) {
                     // 将插值得到的信息传给片元着色器，在片元着色器中经过一些计算得到该片元的颜色
                     fragmentShaderPayload payload(colorInterpolation, normalInterpolation.normalized(), uvInterpolation, texture ? &*texture : nullptr);
 
-                    depthBuffer[y * width + x] = zInterpolation;
                     auto pixelColor = fragmentShader(payload);
                     setPixel(point, pixelColor);
                 }
